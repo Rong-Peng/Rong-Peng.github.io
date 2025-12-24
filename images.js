@@ -58,7 +58,7 @@ const mockImages = [
   },
   {
     id: 10,
-    url:'/ass/pho/bj12.png',
+    url:'/ass/pho/bg13.png',
     title: '商品图 10',
     description: '尺寸： 1344x768'
   },
