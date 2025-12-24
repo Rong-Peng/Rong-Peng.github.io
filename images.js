@@ -2,25 +2,25 @@
 const mockImages = [
   {
     id: 1,
-    url: 'ass/pho/bg1.png',
+    url: 'https://cdn.jsdelivr.net/gh/Rong-Peng/Rong-Peng.github.io@main/ass/pho/bk1.png',
     title: 'AIGC 作品 1',
     description: '尺寸：2048x2048'
   },
   {
     id: 2,
-    url: 'ass/pho/bg2.png',
+    url: 'https://cdn.jsdelivr.net/gh/Rong-Peng/Rong-Peng.github.io@main/ass/pho/bg2.png',
     title: 'AIGC 作品 2',
     description: '尺寸：2048x2048'
   },
   {
     id: 3,
-    url: 'ass/pho/bg3.png',
+    url: 'https://cdn.jsdelivr.net/gh/Rong-Peng/Rong-Peng.github.io@main/ass/pho/bg3.png',
     title: 'AIGC 作品 3',
     description: '尺寸：2752x1536'
   },
   {
     id: 4,
-    url: 'ass/pho/bk1.png',
+    url: 'https://cdn.jsdelivr.net/gh/Rong-Peng/Rong-Peng.github.io@main/ass/pho/bk1.png',
     title: 'AIGC 作品 4',
     description: '尺寸：2752x1536'
   },
