@@ -2,10 +2,502 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Paige · AIGC Portfolio</title>
 </head>
 <body>
-  <h1>Hello, this is my AIGC portfolio.</h1>
-  <p>My website is working.</p>
+  <div class="container">
+    <div class="header">
+      <h1>📸 商品作品集</h1>
+      <p>AIGC 生成的精美图片瀑布流展示</p>
+    </div>
+
+    <div class="waterfall" id="waterfall"></div>
+
+    <div class="load-more">
+      <button class="load-btn" id="loadBtn">加载更多</button>
+    </div>
+  </div>
+
+  <!-- 大图查看模态框 -->
+  <div class="modal" id="imageModal">
+    <div class="modal-content">
+      <button class="modal-close" id="closeBtn">&times;</button>
+      <button class="modal-nav modal-prev" id="prevBtn">❮</button>
+      <img id="modalImage" src="" alt="">
+      <button class="modal-nav modal-next" id="nextBtn">❯</button>
+      <button class="modal-download" id="downloadBtn" title="下载图片">⬇ 保存</button>
+      <div class="modal-info">
+        <p id="imageTitle"></p>
+        <p id="imageCounter"></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="images.js"></script>
+  <script>
+    let currentPage = 1;
+    const itemsPerPage = 6;
+    let allLoadedImages = []; // 存储所有已加载的图片
+    let currentImageIndex = 0; // 当前查看的图片索引
+
+    // 打开大图模态框
+    function openModal(imageIndex) {
+      currentImageIndex = imageIndex;
+      const image = allLoadedImages[imageIndex];
+      
+      const modal = document.getElementById('imageModal');
+      const modalImage = document.getElementById('modalImage');
+      const imageTitle = document.getElementById('imageTitle');
+      const imageCounter = document.getElementById('imageCounter');
+      
+      modalImage.src = image.url;
+      imageTitle.textContent = image.title;
+      imageCounter.textContent = `${imageIndex + 1} / ${allLoadedImages.length}`;
+      
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    // 关闭大图模态框
+    function closeModal() {
+      const modal = document.getElementById('imageModal');
+      modal.classList.remove('active');
+      document.body.style.overflow = 'auto';
+    }
+
+    // 显示前一张图片
+    function showPrevImage() {
+      if (currentImageIndex > 0) {
+        openModal(currentImageIndex - 1);
+      }
+    }
+
+    // 显示下一张图片
+    function showNextImage() {
+      if (currentImageIndex < allLoadedImages.length - 1) {
+        openModal(currentImageIndex + 1);
+      }
+    }
+
+    // 创建图片卡片
+    function createPhotoCard(image) {
+      const card = document.createElement('div');
+      card.className = 'photo-card';
+      
+      card.innerHTML = `
+        <div class="placeholder"></div>
+        <img src="${image.url}" alt="${image.title}" loading="lazy">
+        <div class="photo-info">
+          <h3>${image.title}</h3>
+          <p>${image.description}</p>
+        </div>
+      `;
+
+      // 图片加载完成后移除占位符
+      const img = card.querySelector('img');
+      img.addEventListener('load', () => {
+        img.classList.add('loaded');
+        card.querySelector('.placeholder').style.display = 'none';
+      });
+
+      img.addEventListener('error', () => {
+        card.querySelector('.placeholder').innerHTML = '图片加载失败';
+      });
+
+      // 添加点击事件打开大图
+      card.addEventListener('click', () => {
+        openModal(allLoadedImages.indexOf(image));
+      });
+
+      return card;
+    }
+
+    // 加载图片
+    function loadImages(page) {
+      const start = (page - 1) * itemsPerPage;
+      const end = start + itemsPerPage;
+      const images = mockImages.slice(start, end);
+
+      // 如果没有更多数据，禁用按钮
+      if (images.length === 0) {
+        document.getElementById('loadBtn').textContent = '没有更多了';
+        document.getElementById('loadBtn').disabled = true;
+        return;
+      }
+
+      const waterfall = document.getElementById('waterfall');
+      images.forEach(image => {
+        allLoadedImages.push(image);
+        waterfall.appendChild(createPhotoCard(image));
+      });
+
+      currentPage++;
+    }
+
+    // 加载更多按钮点击事件
+    document.getElementById('loadBtn').addEventListener('click', () => {
+      const btn = document.getElementById('loadBtn');
+      btn.classList.add('loading');
+      
+      // 模拟网络延迟
+      setTimeout(() => {
+        loadImages(currentPage);
+        btn.classList.remove('loading');
+      }, 300);
+    });
+
+    // 模态框事件监听
+    document.getElementById('closeBtn').addEventListener('click', closeModal);
+    document.getElementById('prevBtn').addEventListener('click', showPrevImage);
+    document.getElementById('nextBtn').addEventListener('click', showNextImage);
+
+    // 下载当前大图
+    function downloadCurrentImage() {
+      const image = allLoadedImages[currentImageIndex];
+      if (!image) return;
+      const url = image.url;
+      // 从 URL 推断扩展名
+      let ext = '';
+      const lastDot = url.lastIndexOf('.');
+      if (lastDot !== -1 && lastDot < url.length - 1) {
+        ext = url.substring(lastDot);
+      } else {
+        ext = '.png';
+      }
+      const baseName = (image.title || 'image').replace(/[^a-z0-9\-_.]/gi, '_');
+      const filename = baseName + ext;
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    const downloadBtn = document.getElementById('downloadBtn');
+    if (downloadBtn) {
+      downloadBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        downloadCurrentImage();
+      });
+    }
+
+    // 点击模态框背景关闭
+    document.getElementById('imageModal').addEventListener('click', (e) => {
+      if (e.target.id === 'imageModal') {
+        closeModal();
+      }
+    });
+
+    // 键盘控制
+    document.addEventListener('keydown', (e) => {
+      const modal = document.getElementById('imageModal');
+      if (modal.classList.contains('active')) {
+        if (e.key === 'ArrowLeft') showPrevImage();
+        if (e.key === 'ArrowRight') showNextImage();
+        if (e.key === 'Escape') closeModal();
+      }
+    });
+
+    // 初始加载
+    loadImages(1);
+  </script>  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 50px;
+      color: #333;
+    }
+
+    .header h1 {
+      font-size: 3em;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header p {
+      font-size: 1.1em;
+      color: #666;
+    }
+
+    /* 瀑布流容器 */
+    .waterfall {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+      grid-auto-rows: auto;
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+      .waterfall {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 15px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .waterfall {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* 图片卡片 */
+    .photo-card {
+      position: relative;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      cursor: pointer;
+    }
+
+    .photo-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .photo-card img {
+      width: 100%;
+      height: auto;
+      display: block;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .photo-card img.loaded {
+      opacity: 1;
+    }
+
+    .photo-card .placeholder {
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+      padding-bottom: 100%;
+    }
+
+    @keyframes loading {
+      0% {
+        background-position: 200% 0;
+      }
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
+    .photo-info {
+      padding: 15px;
+      color: #666;
+      font-size: 0.9em;
+    }
+
+    .photo-info h3 {
+      color: #333;
+      margin-bottom: 5px;
+      font-size: 1em;
+    }
+
+    /* 加载更多按钮 */
+    .load-more {
+      text-align: center;
+      margin-top: 50px;
+    }
+
+    .load-btn {
+      padding: 12px 40px;
+      font-size: 1em;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .load-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+
+    .load-btn:active {
+      transform: translateY(0);
+    }
+
+    .load-btn.loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    /* 模态框样式 */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 1000;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .modal.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    .modal-content {
+      position: relative;
+      max-width: 90%;
+      max-height: 90vh;
+      animation: zoomIn 0.3s ease;
+    }
+
+    @keyframes zoomIn {
+      from {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .modal-content img {
+      max-width: 100%;
+      max-height: 85vh;
+      border-radius: 8px;
+      display: block;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      font-size: 40px;
+      color: white;
+      cursor: pointer;
+      background: rgba(0, 0, 0, 0.5);
+      border: none;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .modal-close:hover {
+      background: rgba(0, 0, 0, 0.8);
+      transform: scale(1.1);
+    }
+
+    .modal-info {
+      color: white;
+      margin-top: 20px;
+      text-align: center;
+      font-size: 1.1em;
+    }
+
+    .modal-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: none;
+      font-size: 30px;
+      cursor: pointer;
+      padding: 15px 20px;
+      border-radius: 4px;
+      transition: all 0.3s;
+      line-height: 1;
+    }
+
+    .modal-nav:hover {
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    .modal-prev {
+      left: 20px;
+    }
+
+    .modal-next {
+      right: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .modal-nav {
+        font-size: 20px;
+        padding: 10px 15px;
+      }
+
+      .modal-close {
+        top: 10px;
+        right: 10px;
+        width: 40px;
+        height: 40px;
+        font-size: 28px;
+      }
+    }
+    
+    /* 下载按钮样式 */
+    .modal-download {
+      position: absolute;
+      top: 20px;
+      right: 90px;
+      font-size: 16px;
+      color: white;
+      background: rgba(0,0,0,0.5);
+      border: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .modal-download:hover {
+      background: rgba(0,0,0,0.75);
+      transform: translateY(-2px);
+    }
+  </style>
 </body>
 </html>
